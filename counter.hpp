@@ -28,6 +28,8 @@ public:
 
 	virtual T operator+(const T&) = 0;
 	virtual T operator-(const T&) = 0;
+	virtual T operator++() = 0;
+	virtual	 T operator--() = 0;
 
 	virtual T add(const T&) = 0;
 
@@ -65,12 +67,22 @@ public:
 		return this->sub(v);
 	}
 
+	virtual T operator++()
+	{
+		return this->add();
+	}
+
+	virtual T operator--()
+	{
+		return this->sub();
+	}
+
 	virtual T add(const T& v = 1)
 	{
 		return this->val.fetch_add(v);
 	}
 
-	virtual T sub(const T& v)
+	virtual T sub(const T& v = 1)
 	{
 		return this->val.fetch_sub(v);
 	}

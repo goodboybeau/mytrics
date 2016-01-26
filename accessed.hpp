@@ -30,7 +30,7 @@ struct meta_call
 		return this->f();
 	}
 
-	T* operator->()
+	virtual T* operator->()
 	{
 		DEBUG("meta_call operator->");
 		return &this->ref.get();
@@ -65,7 +65,7 @@ public:
 		DEBUG("post_operation");
 	}
 
-	meta_call<Accessed<T>, void> operator->()
+	virtual meta_call<Accessed<T>, void> operator->()
 	{
 		DEBUG("Accessed operator->");
 

@@ -2,8 +2,9 @@
 #define _COLLECTOR_HPP_
 
 #include "singleton.hpp"
-#include "metrics.hpp"
 #include "network.hpp"
+#include "thread.hpp"
+#include "counter.hpp"
 
 namespace
 {
@@ -17,6 +18,7 @@ public:
 	Collector()
 		: reporting(std::make_shared<std::atomic_bool>())
 	{}
+
 	virtual ~Collector() {}
 
 	virtual void register_metric( std::shared_ptr<IMetric> metric)
@@ -127,21 +129,21 @@ protected:
 	std::condition_variable cv;
 	std::shared_ptr<std::atomic_bool> has_stats;
 
-protected:
+public:
 	ThreadSafeRepo(const std::string& _namespace)
 			: Repository(_namespace)
 			, has_stats(std::make_shared<std::atomic_bool>(false))
 		{
-
 		}
-public:
 
 	virtual ~ThreadSafeRepo() {}
 
 	virtual void push(SharedStatFormation& formatter)
 	{
 		std::lock_guard<std::mutex> lk(this->write_mutex);
+
 		this->Repository::push(formatter);
+
 		this->has_stats->store(true);
 		this->cv.notify_one();
 	}
@@ -160,12 +162,14 @@ public:
 
 class StatRepo : public ThreadSafeRepo, public Singleton<StatRepo>, public Thread
 {
-	int pcount;
+	int run_count;
+	int pop_count;
 	UDPSocket sock;
 public:
 	StatRepo(const std::string& _namespace)
 		: ThreadSafeRepo(_namespace)
-		, pcount(0)
+		, run_count(0)
+		, pop_count(0)
 		, sock("localhost", 12345)
 	{
 	}
@@ -174,7 +178,7 @@ public:
 	{
 		while(!this->queue.empty())
 		{
-			pcount++;
+			this->pop_count++;
 			auto f = this->pop();
 			std::string fstat = f->operator ()(this->ns);
 			sock.send(fstat);
@@ -184,17 +188,16 @@ public:
 
 	virtual void run()
 	{
-		int count = 0;
 		while(!this->stop_request.load() || !this->queue.empty())
 		{
-			count ++;
+			this->run_count ++;
 			this->process();
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 		this->running.store(false);
 
-		std::cout << "ran " << std::to_string(count) << " times " << std::endl;
-		std::cout << "popped " << std::to_string(pcount) << " times " << std::endl;
+		std::cout << "ran " << std::to_string(this->run_count) << " times " << std::endl;
+		std::cout << "popped " << std::to_string(this->pop_count) << " times " << std::endl;
 	}
 };
 

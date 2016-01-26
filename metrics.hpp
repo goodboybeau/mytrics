@@ -31,11 +31,11 @@
 
 
 #include "thread.hpp"
-
 #include "collector.hpp"
-#include "accessed.hpp"
 #include "counter.hpp"
 #include "timer.hpp"
+#include "accessed.hpp"
+
 
 template<class T>
 class SmartStat : public T
@@ -128,5 +128,18 @@ public:
 };
 
 typedef SmarterStat<UnsignedCounter> SmartUnsignedCounter;
+
+class CountAccessed : public SmartUnsignedCounter
+{
+public:
+	CountAccessed(const std::string& n)
+		: SmartUnsignedCounter(std::move(n))
+	{}
+
+	virtual void post_operation()
+	{
+		this->add();
+	}
+};
 
 #endif /* METRICS_HPP_ */

@@ -166,7 +166,7 @@ TEST(UDPSocket, Send)
 TEST(Accessed, Check)
 {
 	UDPSocket receiver("localhost", 12345);
-	auto bind_res = receiver.bind();
+	int bind_res = receiver.bind();
 	std::cout << "bind() returned: " << bind_res << std::endl;
 
 	StatRepo::Instance("namespace")->start();
